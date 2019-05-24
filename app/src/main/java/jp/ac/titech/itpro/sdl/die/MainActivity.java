@@ -8,6 +8,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.SeekBar;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
     private final static String TAG = MainActivity.class.getSimpleName();
 
@@ -16,6 +19,10 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     private Cube cube;
     private Pyramid pyramid;
+    private Timer timer;
+    private int previous;
+    private int delta;
+    private boolean up;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,9 +31,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         setContentView(R.layout.activity_main);
 
         glView = findViewById(R.id.gl_view);
-        SeekBar seekBarX = findViewById(R.id.seekbar_x);
-        SeekBar seekBarY = findViewById(R.id.seekbar_y);
-        SeekBar seekBarZ = findViewById(R.id.seekbar_z);
+        final SeekBar seekBarX = findViewById(R.id.seekbar_x);
+        final SeekBar seekBarY = findViewById(R.id.seekbar_y);
+        final SeekBar seekBarZ = findViewById(R.id.seekbar_z);
         seekBarX.setMax(360);
         seekBarY.setMax(360);
         seekBarZ.setMax(360);
@@ -37,8 +44,35 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         renderer = new SimpleRenderer();
         cube = new Cube();
         pyramid = new Pyramid();
+
+        timer = new Timer();
+        previous = 0;
+        delta = 1;
+        up = true;
         renderer.setObj(cube);
         glView.setRenderer(renderer);
+
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (previous % 36 == 0) {
+                  if (up && delta < 20) {
+                    delta++;
+                  } else if (delta == 1){
+                    up = true;
+                    delta++;
+                  } else {
+                    up = false;
+                    delta--;
+                  }
+                }
+                previous += delta;
+                previous %= 360;
+                seekBarX.setProgress(previous);
+                seekBarY.setProgress(previous);
+                seekBarZ.setProgress(previous);
+            }
+        }, 0, 16);
     }
 
     @Override
@@ -66,10 +100,10 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         public boolean onOptionsItemSelected(MenuItem item) {
         Log.d(TAG, "onOptionsItemSelected");
         switch (item.getItemId()) {
-        case R.id.menu_cube:
+          case R.id.menu_cube:
             renderer.setObj(cube);
             break;
-        case R.id.menu_pyramid:
+          case R.id.menu_pyramid:
             renderer.setObj(pyramid);
             break;
         }
